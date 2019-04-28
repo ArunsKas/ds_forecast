@@ -1,0 +1,389 @@
+<?php
+/**
+ * @file
+ * Provides a block that displays a weather forecast.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function ds_forecast_menu() {
+
+  $items['admin/config/ds_forecast'] = array(
+    'title' => 'Dark Sky Forecast',
+    'description' => 'Set up weather forecasting.',
+    'position' => 'right',
+    'weight' => -5,
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+
+  $items['admin/config/ds_forecast/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Set up the Dark Sky Forecast API.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ds_forecast_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'ds_forecast.admin.inc',
+  );
+
+  return $items;
+
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function ds_forecast_block_info() {
+  $blocks['forecast'] = array(
+    'info' => t('Dark Sky Forecast'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * @inheritdoc
+ */
+function ds_forecast_block_view($delta = '') {
+
+  $block = array();
+
+  switch ($delta) {
+    case 'forecast':
+      $block['subject'] = NULL;
+      $current_forecast = ds_forecast_get_current();
+      $block['content'] = theme('forecast', $current_forecast);
+      break;
+  }
+
+  return $block;
+
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ds_forecast_theme() {
+  return array(
+    'forecast' => array(
+      'template' => 'forecast',
+      'path' => drupal_get_path('module', 'ds_forecast') . '/templates',
+      'variables' => ds_forecast_get_defaults(),
+    ),
+  );
+}
+
+/**
+ * Returns the URL to be used for API calls.
+ */
+function ds_forecast_get_api_url() {
+
+  $key = variable_get('ds_forecast_api_key');
+  $lat = variable_get('ds_forecast_geo_lat');
+  $lon = variable_get('ds_forecast_geo_long');
+
+  // https://api.darksky.net/forecast/f6c085c6be4a70ff1303426de282976c/55.87583,21.25083?exclude=daily%2Calerts%2Cflags&units=si
+  
+  // https://api.forecast.io/forecast/f6c085c6be4a70ff1303426de282976c/55.87583,21.25083
+  // https://api.darksky.net/forecast/f6c085c6be4a70ff1303426de282976c/55.87583,21.25083?exclude=daily,alerts,flags&units=si
+  $url = url("https://api.darksky.net/forecast/$key/$lat,$lon", array(
+    'absolute' => TRUE,
+    'external' => TRUE,
+    'https' => TRUE,
+  ));
+  
+  // query must be included raw, so include dirty way
+  $query = array(
+    'exclude' => 'hourly,daily,alerts,flags',
+    'units' => 'si'
+  );
+  $pos = 0;
+  foreach($query as $key => $option) {
+    if ($pos > 0) {
+      $url .= '&';
+    } else {
+      $url .= '?';
+    }
+    $url .= $key . '=' . $option;
+    $pos++;
+  }
+  
+  return $url;
+  
+}
+
+/**
+ * Returns the current forecast.
+ */
+function ds_forecast_get_current() {
+
+  // Always check for cached data first.
+  if ($cache = ds_forecast_cache_get()) {
+    return $cache;
+  }
+
+  // If there is no unexpired cache data, make the API call.
+  $ch = curl_init(ds_forecast_get_api_url());
+  curl_setopt($ch, CURLOPT_HEADER, false);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  $forecast = curl_exec($ch);
+  // If retrieval fails, log it and return default values for
+  // all theme variables. No need to cache data here, because
+  // defaults are used when the request fails.
+  if ($forecast === FALSE) {
+    watchdog('weather', 'Failed to retrieve Dark Sky data. %error',
+      array('%error' => curl_error($ch)), WATCHDOG_ERROR);
+    return ds_forecast_get_defaults();
+  }
+  else {
+    watchdog('weather', 'Retrieved fresh Dark Sky forecast data.', array(), WATCHDOG_INFO);
+  }
+
+  // Convert JSON data to PHP array.
+  $forecast = drupal_json_decode($forecast);
+  // Grab the pertinent information to supply to the theme.
+  $timeframe = variable_get('ds_forecast_period', 'currently');
+  $wind_bearing = ds_forecast_get_value($forecast, $timeframe, 'windBearing');
+  $wind_rose = wind_rose($wind_bearing);
+  $vars = array(
+    'period'              => $timeframe,
+    'time'                => ds_forecast_get_value($forecast, $timeframe, 'time'),
+    'summary'             => ds_forecast_get_value($forecast, $timeframe, 'summary'),
+    'icon'                => ds_forecast_get_value($forecast, $timeframe, 'icon'),
+    'temperature'         => ds_forecast_get_value($forecast, $timeframe, 'temperature'),
+    'humidity'            => ds_forecast_get_value($forecast, $timeframe, 'humidity'),
+    'pressure'            => ds_forecast_get_value($forecast, $timeframe, 'pressure'),
+    'wind_speed'          => ds_forecast_get_value($forecast, $timeframe, 'windSpeed'),
+    'wind_rose'           => $wind_rose,
+    'cloud_cover'         => ds_forecast_get_value($forecast, $timeframe, 'cloudCover'),
+    'precip_intensity'    => ds_forecast_get_value($forecast, $timeframe, 'precipIntensity'),
+    'precip_probability'  => ds_forecast_get_value($forecast, $timeframe, 'precipProbability'),
+    'alerts'              => ds_forecast_get_value($forecast, $timeframe, 'alerts', array()),
+  );
+
+  // Before we use this data, cache it for later.
+  ds_forecast_cache_set($vars);
+  
+  // We're done here. Send the data back for use.
+  return $vars;
+
+}
+
+function wind_rose($item) {
+  $wind_dir = array(
+    t("N"), 
+    t("NNE"), 
+    t("NE"), 
+    t("ENE"), 
+    t("E"), 
+    t("ESE"), 
+    t("SE"), 
+    t("SSE"), 
+    t("S"), 
+    t("SSW"), 
+    t("SW"), 
+    t("WSW"), 
+    t("W"), 
+    t("WNW"), 
+    t("NW"), 
+    t("NNW"), 
+    t("N"),
+  );
+  return $wind_dir[round($item * 16 / 360)];
+}
+
+/**
+ * Returns an array of default forecast values.
+ */
+function ds_forecast_get_defaults() {
+  return array(
+    'period' => NULL,
+    'time' => NULL,
+    'summary' => NULL,
+    'icon' => NULL,
+    'temperature' => NULL,
+    'humidity' => NULL,
+    'pressure' => NULL,
+    'wind_speed' => NULL,
+    'wind_rose' => NULL,
+    'cloud_cover' => NULL,
+    'precip_intensity' => NULL,
+    'precip_probability' => NULL,
+    'alerts' => array(),
+  );
+}
+
+/**
+ * Returns a single value from JSON data retrieved from API call.
+ *
+ * @param array $data
+ *   Array containing parsed JSON data from the Dark Sky API.
+ * @param string $timeframe
+ *   A string representing the forecast period.
+ * @param string $key
+ *   The name of the data point to retrieve from the specified period.
+ * @param mixed|null $default
+ *   A default value to be returned if data cannot be found.
+ *
+ * @return mixed
+ *   The value of the specified data point, or $default if data not found.
+ */
+function ds_forecast_get_value($data, $timeframe, $key, $default = NULL) {
+
+  // SPECIAL CASE:
+  // Alerts are not specific to a particular timeframe, and should
+  // simply be returned from $data.
+  if ($key === 'alerts' && array_key_exists($key, $data) && count($data[$key]) > 0) {
+    return $data[$key];
+  }
+  elseif ($key === 'alerts' && (!array_key_exists($key, $data) || count($data[$key]) < 1)) {
+    return $default;
+  }
+
+  // The data returned from the Dark Sky Forecast API is not
+  // consistently structured. Each timeframe may have its own
+  // unique structure. This function facilitates retrieving
+  // data point values. Timeframes returning data blocks will
+  // use the first matching key found (usually the first data point).
+  $value = ds_forecast_array_search($data[$timeframe], $key, $default);
+
+  // If the key we're looking for happens to be 'temperature', and we
+  // did not find a value for that item (as is the case with the 'minutely'
+  // timeframe), get the value from the 'currently' data point.
+  if ($value === $default && $key === 'temperature') {
+    $value = ds_forecast_array_search($data['currently'], $key, $default);
+    // If the current temperature is not found, too bad. We'll send back
+    // the default value.
+  }
+
+  return $value;
+
+}
+
+/**
+ * Performs a recursive search for a specified data point.
+ *
+ * @param array $data
+ *   The data to be searched.
+ * @param string $key
+ *   The name of the key to search for.
+ * @param mixed $default
+ *   A default value to return if the key cannot be found.
+ *
+ * @return mixed
+ *   The value of the data point or $default if not found.
+ */
+function ds_forecast_array_search($data, $key, $default = NULL) {
+
+  // Set result to the default value. If a matching key is not found,
+  // this is the value that will be returned.
+  $result = $default;
+
+  // Loop through all items in the $data array. This array should be
+  // either a data point (currently) or a data block (minutely, hourly,
+  // daily).
+  foreach ($data as $item => $value) {
+
+    if ($item === $key) {
+
+      // The key was found. We need to return the value and stop searching.
+      $result = $value;
+      break;
+
+    }
+
+    elseif (is_array($value)) {
+
+      // If the item does not match the searched key, but is an array,
+      // search that array for the same key. Typically if the key is
+      // found in an array, it will be in the first element, which in
+      // cases where the key is found in the first point of a data
+      // block, the value of the key will represent the current weather
+      // conditions.
+      $result = ds_forecast_array_search($value, $key, $default);
+
+      if ($result !== $default) {
+        // The key was found. We can return the value now.
+        break;
+      }
+
+    }
+
+  }
+
+  // The value of $result should now be either the searched key's
+  // value, or if not found, the default value passed into the
+  // $default parameter.
+  return $result;
+
+}
+
+/**
+ * Retrieves cached API data.
+ *
+ * @return array|bool
+ *   Valid cached data or FALSE if no data or expired data.
+ */
+function ds_forecast_cache_get() {
+
+  // We should always check the cache before making another call
+  // to the forecast.io API. With a 2000 request limit per month,
+  // we do not want the API to get hit with a request on each
+  // and every page load. It will exhaust that limit quickly, resulting
+  // in potentially high costs.
+  if ($cached = cache_get('ds_forecast:block', 'cache')) {
+
+    // If we have cached data, we still need to check it for expiry.
+    if (REQUEST_TIME > $cached->expire) {
+
+      // If expired, clear the cached data. It's old and we no longer
+      // need it.
+      cache_clear_all('ds_forecast:block', 'cache');
+
+    }
+
+    else {
+
+      // Cache has unexpired data in it. Return cached data.
+      return $cached->data;
+
+    }
+
+  }
+
+  // Assume failure by default. If we get to this point, the
+  // cache either did not exist or was expired.
+  return FALSE;
+
+}
+
+/**
+ * Caches forecast data.
+ *
+ * @param array $data
+ *   The forecast data to be cached.
+ */
+function ds_forecast_cache_set($data) {
+
+  $cache_len = variable_get('ds_forecast_cache_lifetime', 0);
+  if ($cache_len == 0) {
+    return;
+  }
+
+  // If cached data already exists, clear it.
+  if (cache_get('ds_forecast:block', 'cache')) {
+    cache_clear_all('ds_forecast:block', 'cache');
+  }
+
+  // Now that we've cleared the cache, we can rebuild it with
+  // current data. Cache will expire according to the user's entry
+  // in settings. Defaults to 90 seconds if no value entered.
+  cache_set('ds_forecast:block', $data, 'cache', REQUEST_TIME + $cache_len);
+
+}

@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * Cleans up variables on uninstallation.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function ds_forecast_uninstall() {
+
+  // Clean up the settings form variables.
+  variable_del('ds_forecast_api_key');
+  variable_del('ds_forecast_geo_lat');
+  variable_del('ds_forecast_geo_long');
+  variable_del('ds_forecast_period');
+  variable_del('ds_forecast_cache_lifetime');
+
+  // Clear the module cache.
+  cache_clear_all('ds_forecast:block', 'cache');
+
+}

@@ -1,0 +1,31 @@
+.ds-forecast i.wi {
+  font-size: 80px;
+  text-align: center;
+  display: block;
+}
+.ds-forecast .forecast-summary {
+  display: none;
+}
+.ds-forecast .forecast-details {
+  margin-top: 15px;
+
+}
+.ds-detail, .ds-label {
+  text-align: center;
+  font-size: 20px;
+}
+.ds-label {
+  font-weight: bold;
+  font-size: 18px;
+}
+.ds-detail.wind-direction {
+  margin-left: 10px;
+}
+.ds-detail.temperature {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  font-weight: bold;
+  font-size: 32px;
+  border-bottom: 3px dotted #888888;
+}
+

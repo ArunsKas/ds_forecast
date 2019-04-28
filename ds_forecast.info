@@ -1,0 +1,7 @@
+name = Dark Sky Forecast [custom]
+description = Displays themeable local weather forecast via the Dark Sky Forecast API.
+core = 7.x
+package = Weather
+stylesheets[all][] = icons/css/weather-icons.min.css
+stylesheets[all][] = css/styles.css
+

@@ -1,0 +1,187 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  ds_forecast.admin.inc: n/a
+#  ds_forecast.module: n/a
+#  ds_forecast.info: n/a
+#  templates/forecast.tpl.php: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2019-04-28 23:02+0300\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: ds_forecast.admin.inc:16
+msgid "API Key"
+msgstr ""
+
+#: ds_forecast.admin.inc:18
+msgid "Your API key from https://developer.forecast.io"
+msgstr ""
+
+#: ds_forecast.admin.inc:25
+msgid "Latitude"
+msgstr ""
+
+#: ds_forecast.admin.inc:27
+msgid "Latitude geo-coordinate. (example: 31.311556)"
+msgstr ""
+
+#: ds_forecast.admin.inc:34
+msgid "Longitude"
+msgstr ""
+
+#: ds_forecast.admin.inc:36
+msgid "Longitude geo-coordinate. (example: -92.445070"
+msgstr ""
+
+#: ds_forecast.admin.inc:42
+msgid "Forecast Period"
+msgstr ""
+
+#: ds_forecast.admin.inc:46
+msgid "Right Now"
+msgstr ""
+
+#: ds_forecast.admin.inc:47
+msgid "Next 60 Minutes"
+msgstr ""
+
+#: ds_forecast.admin.inc:48
+msgid "Next 24 Hours"
+msgstr ""
+
+#: ds_forecast.admin.inc:49
+msgid "Next 7 Days"
+msgstr ""
+
+#: ds_forecast.admin.inc:55
+msgid "Cache Lifetime (in seconds)"
+msgstr ""
+
+#: ds_forecast.admin.inc:56
+msgid "Leave blank or 0 to disable caching. Disable with caution. Minimum recommended value is 90."
+msgstr ""
+
+#: ds_forecast.admin.inc:78
+msgid "The \"!name\" option must be zero or a positive integer value."
+msgstr ""
+
+#: ds_forecast.module:42;13
+msgid "Dark Sky Forecast"
+msgstr ""
+
+#: ds_forecast.module:184;200
+msgid "N"
+msgstr ""
+
+#: ds_forecast.module:185
+msgid "NNE"
+msgstr ""
+
+#: ds_forecast.module:186
+msgid "NE"
+msgstr ""
+
+#: ds_forecast.module:187
+msgid "ENE"
+msgstr ""
+
+#: ds_forecast.module:188
+msgid "E"
+msgstr ""
+
+#: ds_forecast.module:189
+msgid "ESE"
+msgstr ""
+
+#: ds_forecast.module:190
+msgid "SE"
+msgstr ""
+
+#: ds_forecast.module:191
+msgid "SSE"
+msgstr ""
+
+#: ds_forecast.module:192
+msgid "S"
+msgstr ""
+
+#: ds_forecast.module:193
+msgid "SSW"
+msgstr ""
+
+#: ds_forecast.module:194
+msgid "SW"
+msgstr ""
+
+#: ds_forecast.module:195
+msgid "WSW"
+msgstr ""
+
+#: ds_forecast.module:196
+msgid "W"
+msgstr ""
+
+#: ds_forecast.module:197
+msgid "WNW"
+msgstr ""
+
+#: ds_forecast.module:198
+msgid "NW"
+msgstr ""
+
+#: ds_forecast.module:199
+msgid "NNW"
+msgstr ""
+
+#: ds_forecast.module:144;149
+msgid "weather"
+msgstr ""
+
+#: ds_forecast.module:144
+msgid "Failed to retrieve Dark Sky data. %error"
+msgstr ""
+
+#: ds_forecast.module:149
+msgid "Retrieved fresh Dark Sky forecast data."
+msgstr ""
+
+#: ds_forecast.module:14
+msgid "Set up weather forecasting."
+msgstr ""
+
+#: ds_forecast.module:24
+msgid "Settings"
+msgstr ""
+
+#: ds_forecast.module:25
+msgid "Set up the Dark Sky Forecast API."
+msgstr ""
+
+#: ds_forecast.info:0
+msgid "Dark Sky Forecast [custom]"
+msgstr ""
+
+#: ds_forecast.info:0
+msgid "Displays themeable local weather forecast via the Dark Sky Forecast API."
+msgstr ""
+
+#: ds_forecast.info:0
+msgid "Weather"
+msgstr ""
+
+#: templates/forecast.tpl.php:66
+msgid "Wind"
+msgstr ""
+
